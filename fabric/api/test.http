@@ -1,0 +1,56 @@
+###
+# Submit ESG Data
+POST http://localhost:3001/submitESGData
+Content-Type: application/json
+
+{
+  "id": "esg1",
+  "companyName": "GreenCo",
+  "category": "Carbon Emissions",
+  "metricValue": "150 tons",
+  "submissionDate": "2024-09-10",
+  "fileHash": "hash_of_file"
+}
+
+###
+# Submit Another ESG Data
+POST http://localhost:3001/submitESGData
+Content-Type: application/json
+
+{
+  "id": "esg2",
+  "companyName": "Energy Solutions",
+  "category": "Energy Usage",
+  "metricValue": "500 MWh",
+  "submissionDate": "2024-09-15",
+  "fileHash": "another_hash_of_file"
+}
+
+###
+# Sign Off ESG Data
+POST http://localhost:3001/signOffESGData
+Content-Type: application/json
+
+{
+  "id": "esg1",
+  "auditorName": "Auditor1"
+}
+
+###
+# Reject ESG Data
+POST http://localhost:3001/rejectESGData
+Content-Type: application/json
+
+{
+  "id": "esg2",
+  "auditorName": "Auditor2",
+  "reason": "Data verification failed"
+}
+
+###
+# Query ESG Data by ID
+GET http://localhost:3001/queryESGData?id=esg1
+
+###
+# Query All ESG Data
+GET http://localhost:3001/queryAllESGData
