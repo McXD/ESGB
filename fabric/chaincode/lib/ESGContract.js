@@ -135,6 +135,36 @@ class ESGContract extends Contract {
       }
     }
   }
+
+  async getHistoryForRecord(ctx, recordId) {
+    const resultsIterator = await ctx.stub.getHistoryForKey(recordId);
+    const history = [];
+
+    while (true) {
+      const res = await resultsIterator.next();
+
+      if (res.value) {
+        const record = {
+          txId: res.value.txId,
+          timestamp: res.value.timestamp,
+          isDeleted: res.value.isDelete,
+          value: null
+        };
+
+        if (res.value.value.toString()) {
+          record.value = JSON.parse(res.value.value.toString('utf8'));
+        }
+        history.push(record);
+      }
+
+      if (res.done) {
+        await resultsIterator.close();
+        break;
+      }
+    }
+
+    return JSON.stringify(history);
+  }
 }
 
 module.exports = ESGContract;

@@ -3,6 +3,7 @@
 import { Table, Button, Tag, Modal, message } from 'antd';
 import { useEffect, useState } from 'react';
 import axios from 'axios';
+import { FilePdfOutlined } from '@ant-design/icons'; // Import the PDF icon
 
 const AuditESGData = () => {
   const [data, setData] = useState([]);
@@ -10,6 +11,7 @@ const AuditESGData = () => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [actionRecord, setActionRecord] = useState(null);
   const [actionType, setActionType] = useState(null);
+  const [hashCheckStatus, setHashCheckStatus] = useState({}); // Store hash check results
 
   // Fetch the ESG data from the backend
   useEffect(() => {
@@ -18,7 +20,7 @@ const AuditESGData = () => {
 
   const fetchESGData = async () => {
     try {
-      const response = await axios.get('http://localhost:3001/queryAllESGData');
+      const response = await axios.get('/api/proxy/queryAllESGData');
       setData(response.data.map((record) => record.value));
     } catch (error) {
       console.error('Failed to fetch ESG data:', error);
@@ -40,14 +42,14 @@ const AuditESGData = () => {
     try {
       if (actionType === 'signOff') {
         // Call the backend API to sign off the ESG data
-        await axios.post('http://localhost:3001/signOffESGData', {
+        await axios.post('/api/proxy/signOffESGData', {
           id: actionRecord.id,
           auditorName: 'GreenAudit', // Replace with real auditor's name or ID
         });
         message.success(`ESG data signed off successfully!`);
       } else if (actionType === 'reject') {
         // Call the backend API to reject the ESG data
-        await axios.post('http://localhost:3001/rejectESGData', {
+        await axios.post('/api/proxy/rejectESGData', {
           id: actionRecord.id,
           auditorName: 'GreenAudit', // Replace with real auditor's name or ID
           reason: 'Data quality insufficient', // Replace with real reason from the auditor
@@ -70,6 +72,25 @@ const AuditESGData = () => {
     setIsModalVisible(false);
   };
 
+  // Function to calculate SHA-256 hash of a file
+  const calculateHash = async (file) => {
+    const arrayBuffer = await file.arrayBuffer();
+    const hashBuffer = await crypto.subtle.digest('SHA-256', arrayBuffer);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const hashHex = hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
+    return hashHex;
+  };
+
+  // Function to compare file hashes
+  const checkFileHash = async (file, expectedHash, recordId) => {
+    const actualHash = await calculateHash(file);
+    const isMatched = actualHash === expectedHash;
+    setHashCheckStatus((prevStatus) => ({
+      ...prevStatus,
+      [recordId]: isMatched ? 'Matched' : 'Unmatched',
+    }));
+  };
+
   const columns = [
     {
       title: 'Company',
@@ -90,6 +111,41 @@ const AuditESGData = () => {
       title: 'Submission Date',
       dataIndex: 'submissionDate',
       key: 'submissionDate',
+    },
+    {
+      title: 'File',
+      key: 'file',
+      render: (text, record) => (
+        <a href={`/api/download/${record.id}.pdf`} target="_blank" rel="noopener noreferrer">
+          <FilePdfOutlined style={{ fontSize: '24px', color: '#ff4d4f' }} />
+        </a>
+      ),
+    },
+    {
+      title: 'Hash Match',
+      key: 'hashMatch',
+      render: (text, record) => (
+        hashCheckStatus[record.id] ? (
+          <Tag color={hashCheckStatus[record.id] === 'Matched' ? 'green' : 'red'}>
+            {hashCheckStatus[record.id]}
+          </Tag>
+        ) : (
+          <Button
+            onClick={async () => {
+              try {
+                // Fetch the file and compare the hash
+                const response = await axios.get(`/api/download/${record.id}.pdf`, { responseType: 'blob' });
+                await checkFileHash(response.data, record.fileHash, record.id);
+              } catch (error) {
+                console.error('Error comparing file hash:', error);
+                message.error('Failed to compare file hash.');
+              }
+            }}
+          >
+            Check Hash
+          </Button>
+        )
+      ),
     },
     {
       title: 'Status',

@@ -10,10 +10,27 @@ const { Option } = Select;
 const SubmitESGData = () => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
+  const [fileList, setFileList] = useState([]); // Ensure this is always an array
+
+  // Utility function to calculate the SHA-256 hash
+  const calculateHash = async (file) => {
+    const arrayBuffer = await file.arrayBuffer(); // Read file as arrayBuffer
+    const hashBuffer = await crypto.subtle.digest('SHA-256', arrayBuffer); // Hash the buffer
+    const hashArray = Array.from(new Uint8Array(hashBuffer)); // Convert to byte array
+    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join(''); // Convert to hex string
+    return hashHex;
+  };
 
   // Handle form submission with API integration
   const onFinish = async (values) => {
+    if (!Array.isArray(fileList) || fileList.length === 0) {
+      message.error('Please upload a file!');
+      return;
+    }
+
     setLoading(true); // Show loading spinner
+
+    const fileHash = await calculateHash(fileList[0].originFileObj);
 
     // Create payload for API
     const payload = {
@@ -22,17 +39,39 @@ const SubmitESGData = () => {
       category: values.dataCategory,
       metricValue: values.metricValue,
       submissionDate: values.submissionDate.format('YYYY-MM-DD'),
-      fileHash: 'hash_of_file' // Mocking file hash, you can calculate the hash for real data
+      fileHash, // Single file hash
     };
 
     try {
-      // Make API call to backend
-      const response = await axios.post('http://localhost:3001/submitESGData', payload);
+      // Calculate hash for the uploaded file (single file)
 
-      // Handle success response
-      message.success('ESG data submitted successfully!');
-      console.log(response.data);
+      const originalFile = fileList[0].originFileObj;
+      const renamedFile = new File(
+        [originalFile],
+        `${payload.id}${originalFile.name.substring(originalFile.name.lastIndexOf('.'))}`,
+        { type: originalFile.type }
+      );
+
+
+      // Send file
+      const fileFormData = new FormData();
+      fileFormData.append('recordId', payload.id); // Add the record ID to the form
+      fileFormData.append('documents', renamedFile); // Add the renamed file to the form
+
+      const response1 = await axios.post('/api/upload', fileFormData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      const response2 = await axios.post('/api/proxy/submitESGData', payload);
+
+      if (response1.status === 200 && response2.status === 200) {
+        message.success('ESG data submitted successfully!');
+      }
+
       form.resetFields(); // Reset the form
+      setFileList([]); // Clear the file list
     } catch (error) {
       // Handle error response
       console.error('Error submitting ESG data:', error);
@@ -42,13 +81,9 @@ const SubmitESGData = () => {
     }
   };
 
-  // Handle file upload (mock implementation for now)
-  const normFile = (e) => {
-    console.log('Upload event:', e);
-    if (Array.isArray(e)) {
-      return e;
-    }
-    return e?.fileList;
+  // Handle file upload event (only allow one file, but still use an array)
+  const handleFileChange = ({ fileList: newFileList }) => {
+    setFileList(newFileList.slice(-1)); // Only keep the last file (restrict to 1 file)
   };
 
   // Inline styles
@@ -114,16 +149,26 @@ const SubmitESGData = () => {
           <DatePicker style={{ width: '100%' }} />
         </Form.Item>
 
-        {/* File Upload (Mocked for now) */}
+        {/* File Upload (only allow one file) */}
         <Form.Item
-          label="Upload Supporting Documents"
+          label="Upload Supporting Document"
           name="upload"
           valuePropName="fileList"
-          getValueFromEvent={normFile}
-          extra="Upload related documents (CSV, PDF, etc.)"
+          getValueFromEvent={
+            (e) => Array.isArray(e) ? e : e && e.fileList
+          } // Ensure fileList is always an array
+          extra="Upload a related document (PDF only)"
           style={styles.formItem}
         >
-          <Upload name="documents" action="/upload" listType="text" multiple>
+          <Upload
+            name="documents"
+            action="/api/upload"
+            listType="text"
+            onChange={handleFileChange} // Handle file change
+            fileList={fileList} // Display the selected file
+            defaultFileList={fileList || []} // Ensure default is an array
+            beforeUpload={() => false}
+          >
             <Button icon={<UploadOutlined />}>Click to Upload</Button>
           </Upload>
         </Form.Item>

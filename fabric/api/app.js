@@ -100,6 +100,8 @@ app.post("/rejectESGData", async (req, res) => {
 app.get("/queryESGData", async (req, res) => {
   const { id } = req.query;
 
+  console.log("Querying ESG data with ID:", id);
+
   try {
     const gateway = await buildGateway();
     const network = await gateway.getNetwork("mychannel");
@@ -113,6 +115,26 @@ app.get("/queryESGData", async (req, res) => {
   } catch (error) {
     console.log(error);
     res.status(500).send(`Failed to query ESG data: ${error}`);
+  }
+});
+
+// Query ESG data history by ID
+app.get("/queryESGDataHistory", async (req, res) => {
+  const { id } = req.query;
+
+  try {
+    const gateway = await buildGateway();
+    const network = await gateway.getNetwork("mychannel");
+    const contract = network.getContract("esg");
+
+    const result = await contract.evaluateTransaction("getHistoryForRecord", id);
+    gateway.close();
+
+    const esgDataHistory = JSON.parse(utf8Decoder.decode(result));
+    res.status(200).json(esgDataHistory);
+  } catch (error) {
+    console.log(error);
+    res.status(500).send(`Failed to query ESG data history: ${error}`);
   }
 });
 

@@ -51,6 +51,11 @@ Content-Type: application/json
 # Query ESG Data by ID
 GET http://localhost:3001/queryESGData?id=esg1
 
+
+###
+# Query ESG Data by ID
+GET http://localhost:3001/queryESGDataHistory?id=esg2
+
 ###
 # Query All ESG Data
 GET http://localhost:3001/queryAllESGData

@@ -3,6 +3,8 @@
 import { Table, Button, Tag, Modal, Timeline, Typography, message } from 'antd';
 import { useEffect, useState } from 'react';
 import axios from 'axios';
+import { FilePdfOutlined } from '@ant-design/icons'; // Import the PDF icon
+
 
 const { Title, Paragraph } = Typography;
 
@@ -11,6 +13,7 @@ const InvestorView = () => {
   const [loading, setLoading] = useState(false);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState(null);
+  const [history, setHistory] = useState([]); // Store history
 
   // Fetch the ESG data from the backend
   useEffect(() => {
@@ -21,7 +24,7 @@ const InvestorView = () => {
     setLoading(true);
 
     try {
-      const response = await axios.get('http://localhost:3001/queryAllESGData');
+      const response = await axios.get('/api/proxy/queryAllESGData');
       setData(response.data.map((record) => record.value));
       setLoading(false);
     } catch (error) {
@@ -31,14 +34,27 @@ const InvestorView = () => {
     }
   };
 
+  // Fetch ESG data history for the selected record
+  const fetchESGDataHistory = async (recordId) => {
+    try {
+      const response = await axios.get(`/api/proxy/queryESGDataHistory?id=${recordId}`);
+      setHistory(response.data); // Set the history data
+    } catch (error) {
+      console.error('Failed to fetch ESG data history:', error);
+      message.error('Failed to load ESG data history.');
+    }
+  };
+
   // Show modal with more details of the selected ESG record
-  const showModal = (record) => {
+  const showModal = async (record) => {
     setSelectedRecord(record);
     setIsModalVisible(true);
+    await fetchESGDataHistory(record.id); // Fetch history when modal opens
   };
 
   const handleCancel = () => {
     setIsModalVisible(false);
+    setHistory([]); // Clear history when modal closes
   };
 
   const columns = [
@@ -63,6 +79,15 @@ const InvestorView = () => {
       key: 'submissionDate',
     },
     {
+      title: 'File',
+      key: 'file',
+      render: (text, record) => (
+        <a href={`/api/download/${record.id}.pdf`} target="_blank" rel="noopener noreferrer">
+          <FilePdfOutlined style={{ fontSize: '24px', color: '#ff4d4f' }} />
+        </a>
+      ),
+    },
+    {
       title: 'Blockchain Status',
       key: 'status',
       render: (text, record) => (
@@ -70,12 +95,6 @@ const InvestorView = () => {
           {record.status}
         </Tag>
       ),
-    },
-    {
-      title: 'Transaction ID',
-      dataIndex: 'transactionId',
-      key: 'transactionId',
-      render: (text) => <a href={`https://blockchain-explorer.com/tx/${text}`} target="_blank">{text}</a>,
     },
     {
       title: 'Action',
@@ -104,7 +123,7 @@ const InvestorView = () => {
         visible={isModalVisible}
         onCancel={handleCancel}
         footer={null}
-        width={600}
+        width={700}
       >
         {selectedRecord && (
           <div>
@@ -114,29 +133,48 @@ const InvestorView = () => {
               <strong>Metric Value:</strong> {selectedRecord.metricValue} <br />
               <strong>Submission Date:</strong> {selectedRecord.submissionDate} <br />
               <strong>Status:</strong> {selectedRecord.status} <br />
-              <strong>Transaction ID:</strong> {selectedRecord.transactionId} <br />
-              <strong>Block Number:</strong> {selectedRecord.blockNumber} <br />
             </Paragraph>
 
             <Title level={5}>Audit Trail</Title>
             <Timeline>
-              <Timeline.Item>Data Submitted on {selectedRecord.submissionDate}</Timeline.Item>
-              <Timeline.Item>Recorded on Blockchain at Block {selectedRecord.blockNumber}</Timeline.Item>
-              {selectedRecord.status === 'Signed Off' && (
-                <Timeline.Item color="green">Signed Off by Auditor</Timeline.Item>
-              )}
-              {selectedRecord.status === 'Rejected' && (
-                <Timeline.Item color="red">Rejected by Auditor: {selectedRecord.rejectionReason}</Timeline.Item>
+              {history.length > 0 ? (
+                history.map((entry, index) => (
+                  <Timeline.Item key={index} color={entry.isDeleted ? 'red' : 'green'}>
+                    <Paragraph>
+                      <strong>Timestamp:</strong> {new Date(entry.timestamp.seconds * 1000).toLocaleString()} <br />
+                      <strong>Transaction ID:</strong> {entry.txId} <br />
+                      {entry.value && (
+                        <>
+                          <strong>Status:</strong> {entry.value.status} <br />
+                          <strong>Company:</strong> {entry.value.companyName} <br />
+                          <strong>Category:</strong> {entry.value.category} <br />
+                          <strong>Metric Value:</strong> {entry.value.metricValue} <br />
+                          <strong>Submission Date:</strong> {entry.value.submissionDate} <br />
+                          <strong>File Hash:</strong> {entry.value.fileHash} <br />
+
+                          {/* Signed off by */}
+                          {entry.value.signedOffBy && (
+                            <Paragraph type="success">
+                              <strong>Signed Off By:</strong> {entry.value.signedOffBy}
+                            </Paragraph>
+                          )}
+
+                          {/* Rejected by */}
+                          {entry.value.rejectedBy && (
+                            <Paragraph type="danger">
+                              <strong>Rejected By:</strong> {entry.value.rejectedBy}
+                            </Paragraph>
+                          )}
+                        </>
+                      )}
+                      {entry.isDeleted && <strong>(Record Deleted)</strong>}
+                    </Paragraph>
+                  </Timeline.Item>
+                ))
+              ) : (
+                <Timeline.Item>No transaction history available</Timeline.Item>
               )}
             </Timeline>
-
-            <Button
-              href={`https://blockchain-explorer.com/tx/${selectedRecord.transactionId}`}
-              target="_blank"
-              type="link"
-            >
-              View on Blockchain Explorer
-            </Button>
           </div>
         )}
       </Modal>

@@ -1,0 +1,34 @@
+networks:
+  webgateway:
+    driver: bridge
+    external: true
+
+services:
+  api-server:
+    build:
+      context: ./fabric  
+    environment:
+      NODE_ENV: production
+    ports:
+      - "3001:3001"
+    container_name: esgb-api-server
+
+  nextjs-app:
+    build:
+      context: ./client 
+    environment:
+      NODE_ENV: production
+    depends_on:
+      - api-server
+    ports:
+      - "3000:3000"
+    container_name: esgb-nextjs-app
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock  # Mount the Docker socket
+    labels:
+      - "traefik.enable=true"                          # Enable Traefik for this service
+      - "traefik.http.routers.esgb.rule=Host(`esgb.yl-feng.phd`)" # Replace with your domain
+      - "traefik.http.services.esgb.loadbalancer.server.port=3000" # Port of your Next.js app inside the container
+      - "traefik.http.routers.esgb.entrypoints=http"
+    networks:
+      - webgateway
