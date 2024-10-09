@@ -45,7 +45,9 @@ const tlsCertPath = path.resolve(
 );
 
 // Gateway peer endpoint.
-const peerEndpoint = "host.docker.internal:9051";
+const hostname = process.env.NODE_ENV === 'production' ? 'peer0.org2.example.com' : 'localhost';
+console.log('hostname:', hostname);
+const peerEndpoint = `${hostname}:9051`;
 
 async function newGrpcConnection() {
   const tlsRootCert = await fs.readFile(tlsCertPath);

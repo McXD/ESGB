@@ -19,5 +19,6 @@ COPY api/ .
 # Expose the application on port 3001
 EXPOSE 3001
 
-# Start the API server
+ENV NODE_ENV=production
+
 CMD ["node", "app.js"]

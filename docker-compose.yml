@@ -2,6 +2,9 @@ networks:
   webgateway:
     driver: bridge
     external: true
+  fabric_test:
+    driver: bridge
+    external: true
 
 services:
   api-server:
@@ -9,9 +12,10 @@ services:
       context: ./fabric  
     environment:
       NODE_ENV: production
-    ports:
-      - "3001:3001"
     container_name: esgb-api-server
+    networks:
+      - fabric_test
+      - webgateway
 
   nextjs-app:
     build:
@@ -20,8 +24,6 @@ services:
       NODE_ENV: production
     depends_on:
       - api-server
-    ports:
-      - "3000:3000"
     container_name: esgb-nextjs-app
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock  # Mount the Docker socket

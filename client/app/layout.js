@@ -2,10 +2,31 @@
 
 import { Layout, Menu } from 'antd';
 import Link from 'next/link';
+import { useEffect, useState } from 'react';
+import { usePathname } from 'next/navigation';
+import './globals.css'
 
 const { Header, Sider, Content } = Layout;
 
 export default function RootLayout({ children }) {
+  const [selectedKey, setSelectedKey] = useState('1');
+  const pathname = usePathname(); // Get the current path
+
+  useEffect(() => {
+    // Mapping URL paths to menu keys
+    const pathToKey = {
+      '/introduction': '1',
+      '/submit-esg-data': '2',
+      '/audit-esg-data': '3',
+      '/investor': '4',
+      '/blockchain-logs': '5',
+    };
+
+    // Update the selectedKey based on the current path
+    const currentKey = pathToKey[pathname] || '1'; // Default to '1' if path doesn't match
+    setSelectedKey(currentKey);
+  }, [pathname]); // Re-run the effect when pathname changes
+
   return (
     <html lang="en">
       <head>
@@ -23,7 +44,7 @@ export default function RootLayout({ children }) {
           <Layout>
             {/* Sider */}
             <Sider style={{ background: '#001529' }}>
-              <Menu theme="dark" mode="inline" defaultSelectedKeys={['1']} style={{ height: '100%' }}>
+              <Menu theme="dark" mode="inline" selectedKeys={[selectedKey]} style={{ height: '100%' }}>
                 <Menu.Item key="1">
                   <Link href="/introduction">Introduction</Link>
                 </Menu.Item>

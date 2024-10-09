@@ -108,10 +108,13 @@ const InvestorView = () => {
   ];
 
   return (
-    <div style={{ padding: '24px' }}>
-      <Title level={2}>Investor ESG Data View</Title>
+    <div style={{ maxWidth: '1000px',
+      margin: '0 auto',
+      padding: '24px',
+     }}>
+      <h2 style={{textAlign: 'center'}}>Investor ESG Data View</h2>
       <Paragraph>
-        As an investor, you can view verified ESG data along with relevant blockchain information such as transaction ID, block number, and verification status. Each record is immutably stored on the blockchain, providing transparency and trust in the data.
+        As an investor, you can view verified ESG data along with relevant blockchain information such as transaction ID, and verification status. Each record is immutably stored on the blockchain, providing transparency and trust in the data.
       </Paragraph>
 
       {/* ESG Data Table */}

@@ -4,6 +4,8 @@ import { Form, Input, Button, Select, Upload, DatePicker, message } from 'antd';
 import { UploadOutlined } from '@ant-design/icons';
 import { useState } from 'react';
 import axios from 'axios'; // Axios for API requests
+import { Typography } from 'antd';
+const { Paragraph } = Typography;
 
 const { Option } = Select;
 
@@ -107,7 +109,13 @@ const SubmitESGData = () => {
 
   return (
     <div style={styles.container}>
-      <h2 style={styles.header}>Submit ESG Data</h2>
+      <h1 style={{textAlign: "center"}}>Submit ESG Data</h1>
+
+      <Paragraph>
+        This form allows your organization to submit key environmental, social, and governance (ESG) metrics, along with supporting documentation, for verification and reporting purposes. You are required to provide the data category (e.g., carbon emissions, energy usage, or governance scores), the relevant metric value, and the date of data submission. Additionally, you will upload a supporting document in PDF format to validate the submitted metric. The system will calculate a hash value to ensure the integrity of the document, linking it securely with your submission for future verification. Once submitted, your data and documentation will be stored on the blockchain and reviewed by auditors to ensure compliance with ESG standards, ensuring transparency and authenticity throughout the reporting process.
+      </Paragraph>
+
+      <br></br>
 
       <Form
         form={form}

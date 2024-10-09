@@ -20,5 +20,6 @@ RUN npm run build
 # Expose port 3000 (internally)
 EXPOSE 3000
 
-# Start the Next.js application
+ENV NODE_ENV=production
+
 CMD ["npm", "start"]

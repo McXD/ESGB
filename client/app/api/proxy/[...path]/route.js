@@ -1,8 +1,13 @@
 import { NextResponse } from 'next/server';
 
+// check environment variable to determine if we are in development or production
+const hostname = process.env.NODE_ENV === 'production' ? 'esgb-api-server' : 'localhost';
+
+console.log('hostname:', hostname);
+
 export async function GET(req) {
   const [_, path] = req.url.split('proxy');
-  const backendUrl = `http://host.docker.internal:3001${path}`;
+  const backendUrl = `http://${hostname}:3001${path}`;
 
   console.log(`Fetching data from: ${backendUrl}`);
 
@@ -24,7 +29,7 @@ export async function POST(req, { params }) {
   const body = await req.json();  // Get the body from the frontend request
 
   // Construct the URL to the blockchain backend
-  const url = `http://host.docker.internal:3001/${path.join('/')}`;
+  const url = `http://${hostname}:3001/${path.join('/')}`;
 
   try {
     const response = await fetch(url, {

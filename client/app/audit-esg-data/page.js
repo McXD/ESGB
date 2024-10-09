@@ -4,6 +4,8 @@ import { Table, Button, Tag, Modal, message } from 'antd';
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { FilePdfOutlined } from '@ant-design/icons'; // Import the PDF icon
+import { Typography } from 'antd';
+const { Paragraph } = Typography;
 
 const AuditESGData = () => {
   const [data, setData] = useState([]);
@@ -177,8 +179,16 @@ const AuditESGData = () => {
   ];
 
   return (
-    <div style={{ padding: '24px' }}>
-      <h2>Audit ESG Data Records</h2>
+    <div style={{
+      maxWidth: '1000px',
+      margin: '0 auto',
+      padding: '24px',
+   }}>
+      <h1 style={{textAlign: 'center'}}>Audit ESG Data Records</h1>
+
+      <Paragraph>
+        This page allows auditors to review, verify, and take action on submitted environmental, social, and governance (ESG) data from companies. Each submission includes key ESG metrics, such as carbon emissions, energy usage, or governance scores, along with supporting documentation. Auditors can view the submitted data, check the integrity of the attached files by verifying their hash values, and decide to either sign off on or reject the data. The sign-off indicates that the data has been reviewed and validated, while a rejection requires providing a reason for insufficient data quality. All decisions made by the auditor are logged for transparency and accountability.
+      </Paragraph>
 
       {/* Table to display ESG data */}
       <Table dataSource={data} columns={columns} loading={loading} rowKey="key" />
