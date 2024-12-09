@@ -5,6 +5,9 @@
 ```bash
 export PROJECT_HOME=$(pwd)
 
+# Install dependencies
+./fabric/install-fabric.sh docker
+
 # Setup the blockchain network
 # Check hyperledger fabric website for prerequisites (e.g., docker)
 cd fabric/test-network
